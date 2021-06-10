@@ -2,12 +2,12 @@ import "./App.css";
 import React from "react";
 import { Line } from "react-chartjs-2";
 import { useState, useEffect } from "react";
-import { AppBar, Button, TextField } from "@material-ui/core";
+import { AppBar, Button } from "@material-ui/core";
 import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
 import { makeStyles } from "@material-ui/core/styles";
 import DateFnsUtils from "@date-io/date-fns";
-import { MuiPickersUtilsProvider, KeyboardTimePicker, KeyboardDatePicker } from "@material-ui/pickers";
+import { MuiPickersUtilsProvider, KeyboardDatePicker } from "@material-ui/pickers";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -39,6 +39,18 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+const formatDate = (date) => {
+  var d = new Date(date),
+    month = "" + (d.getMonth() + 1),
+    day = "" + d.getDate(),
+    year = d.getFullYear();
+
+  if (month.length < 2) month = "0" + month;
+  if (day.length < 2) day = "0" + day;
+
+  return [year, month, day].join("-");
+};
+
 function App() {
   const [width, setWidth] = useState(() => {
     if (window.innerWidth > 1100) {
@@ -47,11 +59,37 @@ function App() {
       return window.innerWidth / 1.35;
     }
   });
+  const [data, setData] = useState({});
+  const [btcPrice, setBtcPrice] = useState(0);
   const [height, setHeight] = useState(window.innerHeight / 1.8);
-  const [selectedDate, setSelectedDate] = React.useState(new Date("2014-08-18T21:11:54"));
+  const [selectedDateFrom, setSelectedDateFrom] = React.useState(new Date("2014-08-18T21:11:54"));
+  const [selectedDateTo, setSelectedDateTo] = React.useState(new Date());
 
-  const handleDateChange = (date) => {
-    setSelectedDate(date);
+  const fetchNewDates = (startDate, endDate) => {
+    fetch(
+      "http://localhost:5000/data?" +
+        new URLSearchParams({
+          startDate: formatDate(startDate),
+          endDate: formatDate(endDate),
+        })
+    )
+      .then((a) => a.json())
+      .then((a) => setData(a))
+      .catch((e) => {
+        console.log(e.status);
+      });
+  };
+
+  const handleDateChangeFrom = (date) => {
+    if (isNaN(new Date(date))) return;
+    fetchNewDates(date, selectedDateTo);
+    setSelectedDateFrom(date);
+  };
+
+  const handleDateChangeTo = (date) => {
+    if (isNaN(new Date(date))) return;
+    fetchNewDates(selectedDateFrom, date);
+    setSelectedDateTo(date);
   };
 
   window.addEventListener("resize", () =>
@@ -66,24 +104,8 @@ function App() {
   window.addEventListener("resize", () => setHeight(window.innerHeight / 1.8));
   const classes = useStyles();
 
-  const data = {
-    labels: ["January", "February", "March", "April", "May", "June", "July", "ff"],
-    datasets: [
-      {
-        label: "My First dataset",
-        data: [65, 59, 80, 81, 56, 55, 40, 50],
-        borderColor: "#FF0000",
-      },
-      {
-        label: "My dataset",
-        data: [65, 100, 80, 0, 56, 30, 40, 50],
-        borderColor: "#0000FF",
-      },
-    ],
-  };
-
   useEffect(() => {
-    /*fetch("http://localhost:5000/data", {
+    fetch("http://localhost:5000/data", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -93,7 +115,33 @@ function App() {
       .then((a) => setData(a))
       .catch((e) => {
         console.log(e.status);
-      });*/
+      });
+
+    fetch("https://api.coinbase.com/v2/prices/spot?currency=USD")
+      .then((a) => a.json())
+      .then((a) => {
+        console.log("new BTC price is " + a["data"]["amount"]);
+        setBtcPrice(a["data"]["amount"]);
+      })
+      .catch((e) => {
+        console.log(e.status);
+      });
+
+    const intervalId = setInterval(
+      async () =>
+        await fetch("https://api.coinbase.com/v2/prices/spot?currency=USD")
+          .then((a) => a.json())
+          .then((a) => {
+            console.log("new BTC price is " + a["data"]["amount"]);
+            setBtcPrice(a["data"]["amount"]);
+          })
+          .catch((e) => {
+            console.log(e.status);
+          }),
+      30000
+    );
+
+    return () => clearInterval(intervalId);
   }, []);
 
   return (
@@ -116,7 +164,7 @@ function App() {
           <div style={{ maxWidth: width }}>
             <Grid container spacing={3}>
               <Grid item xs={12}>
-                <Paper className={classes.paper}>Current Value: $ {width.toString().split(".")[0]}</Paper>
+                <Paper className={classes.paper}>Current Value: $ {btcPrice}</Paper>
               </Grid>
               <Grid item xs={6}>
                 <Paper className={classes.greenPaper}>Prediction: Up</Paper>
@@ -132,10 +180,10 @@ function App() {
                       variant="inline"
                       format="MM/dd/yyyy"
                       margin="normal"
-                      id="date-picker-inline"
+                      id="date-picker-from"
                       label="From"
-                      value={selectedDate}
-                      onChange={handleDateChange}
+                      value={selectedDateFrom}
+                      onChange={handleDateChangeFrom}
                       KeyboardButtonProps={{
                         "aria-label": "change date",
                       }}
@@ -145,10 +193,10 @@ function App() {
                       variant="inline"
                       format="MM/dd/yyyy"
                       margin="normal"
-                      id="date-picker-inline"
+                      id="date-picker-to"
                       label="To"
-                      value={selectedDate}
-                      onChange={handleDateChange}
+                      value={selectedDateTo}
+                      onChange={handleDateChangeTo}
                       KeyboardButtonProps={{
                         "aria-label": "change date",
                       }}
