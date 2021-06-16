@@ -78,7 +78,7 @@ def predict(num_prediction, look_back, epochs):
         name = 'Ground Truth'
     )
     layout = go.Layout(
-        title = "Google Stock",
+        title = "BTC Price",
         xaxis = {'title' : "Date"},
         yaxis = {'title' : "Close"}
     )
