@@ -78,13 +78,13 @@ function App() {
   const [selectedDateTo, setSelectedDateTo] = React.useState(new Date());
   const [epochs, setEpochs] = useState(3);
   const [predictDays, setPredictDays] = useState(7);
-  const [loopback, setLoopback] = useState(5);
+  const [lookback, setLookback] = useState(5);
   const [predictionBool, setPredictionBool] = useState(true);
   const [buttonIsDisabled, setButtonIsDisabled] = useState(false);
 
   const fetchNewDates = (startDate, endDate) => {
     fetch(
-      "http://localhost:5000/data?" +
+      "http://10.11.2.203:5000/data?" +
         new URLSearchParams({
           startDate: formatDate(startDate),
           endDate: formatDate(endDate),
@@ -100,11 +100,11 @@ function App() {
   const makePredictions = () => {
     setButtonIsDisabled(true);
     fetch(
-      "http://localhost:5000/prediction?" +
+      "http://10.11.2.203:5000/prediction?" +
         new URLSearchParams({
           epochs: epochs,
           predictionDays: predictDays,
-          loopBack: loopback,
+          lookBack: lookback,
         })
     )
       .then((a) => a.json())
@@ -150,7 +150,7 @@ function App() {
 
   useEffect(() => {
     fetch(
-      "http://localhost:5000/data?" +
+      "http://10.11.2.203:5000/data?" +
         new URLSearchParams({
           startDate: formatDate(selectedDateFrom),
           endDate: formatDate(selectedDateTo),
@@ -272,9 +272,9 @@ function App() {
               <Grid item xs={4}>
                 <TextField
                   type="number"
-                  onChange={(e) => setLoopback(e.target.value)}
-                  label="Loopback"
-                  value={loopback}
+                  onChange={(e) => setLookback(e.target.value)}
+                  label="Lookback"
+                  value={lookback}
                 />
               </Grid>
               <Grid item xs={12} style={{ textAlign: "center" }}>

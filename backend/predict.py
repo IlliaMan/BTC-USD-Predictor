@@ -1,5 +1,3 @@
-# https://towardsdatascience.com/time-series-forecasting-with-recurrent-neural-networks-74674e289816
-
 import pandas as pd
 import numpy as np
 import tensorflow as tf
@@ -60,10 +58,10 @@ def predict(num_prediction, look_back, epochs):
     prediction = prediction.reshape((-1))
     
     trace1 = go.Scatter(
-    x = date_train,
-    y = close_train,
-    mode = 'lines',
-    name = 'Data'
+        x = date_train,
+        y = close_train,
+        mode = 'lines',
+        name = 'Training Data'
     )
     trace2 = go.Scatter(
         x = date_test,
@@ -75,10 +73,10 @@ def predict(num_prediction, look_back, epochs):
         x = date_test,
         y = close_test,
         mode='lines',
-        name = 'Ground Truth'
+        name = 'Testing Data'
     )
     layout = go.Layout(
-        title = "Google Stock",
+        title = "BTC Price",
         xaxis = {'title' : "Date"},
         yaxis = {'title' : "Close"}
     )

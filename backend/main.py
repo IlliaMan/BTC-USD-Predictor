@@ -55,7 +55,7 @@ def getData():
 @app.route('/prediction', methods=['GET'])
 def makePrediction():
     num_prediction = int(request.args.get('predictionDays'))
-    look_back = int(request.args.get('loopBack'))
+    look_back = int(request.args.get('lookBack'))
     epochs = int(request.args.get('epochs'))
     
     data1 = predict(num_prediction, look_back, epochs)
@@ -76,4 +76,4 @@ def makePrediction():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="10.11.2.203")
