@@ -59,6 +59,33 @@ def predict(num_prediction, look_back, epochs):
     close_test = close_test.reshape((-1))
     prediction = prediction.reshape((-1))
     
+    trace1 = go.Scatter(
+    x = date_train,
+    y = close_train,
+    mode = 'lines',
+    name = 'Data'
+    )
+    trace2 = go.Scatter(
+        x = date_test,
+        y = prediction,
+        mode = 'lines',
+        name = 'Prediction'
+    )
+    trace3 = go.Scatter(
+        x = date_test,
+        y = close_test,
+        mode='lines',
+        name = 'Ground Truth'
+    )
+    layout = go.Layout(
+        title = "Google Stock",
+        xaxis = {'title' : "Date"},
+        yaxis = {'title' : "Close"}
+    )
+    fig = go.Figure(data=[trace1, trace2, trace3], layout=layout)
+    fig.show()
+
+
     close_data = close_data.reshape((-1))
     
     def predict(num_prediction, model):
