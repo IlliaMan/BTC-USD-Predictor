@@ -2,7 +2,7 @@ import pandas as pd
 import datetime
 
 def readData(start = datetime.datetime(2014, 10, 1).date(), end = datetime.datetime.now().date()):
-    df = pd.read_table("../data/BTC-USD-monthly.csv")
+    df = pd.read_table("../data/BTC-USD-daily.csv")
     data = df.to_numpy()
     dates = []
     prices = []

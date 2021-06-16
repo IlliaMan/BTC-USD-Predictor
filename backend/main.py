@@ -1,6 +1,7 @@
 from flask import Flask, Response, jsonify, json, request
 from flask_cors import CORS, cross_origin
 from read_data import readData
+from predict import predict
 import datetime
 
 app = Flask(__name__)
@@ -50,6 +51,29 @@ def getData():
     resp = Response(json.dumps(data))
     resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp
+
+@app.route('/prediction', methods=['GET'])
+def makePrediction():
+    num_prediction = int(request.args.get('predictionDays'))
+    look_back = int(request.args.get('loopBack'))
+    epochs = int(request.args.get('epochs'))
+    
+    data1 = predict(num_prediction, look_back, epochs)
+    for i in data1["labels"]:
+        if(i not in data["labels"]):
+            data["labels"].append(i)
+    
+    data["datasets"][1]["data"] = data1["prices"]
+
+    data["datasets"][1]["data"].insert(0, data["datasets"][0]["data"][-1])
+    for _ in range(len(data["datasets"][0]["data"]) - 1):
+        data["datasets"][1]["data"].insert(0, "null")
+
+    resp = Response(json.dumps(data))
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    data["datasets"][1]["data"] = []
+    return resp
+
 
 if __name__ == "__main__":
     app.run(debug=True)

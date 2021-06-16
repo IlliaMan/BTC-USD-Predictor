@@ -2,12 +2,14 @@ import "./App.css";
 import React from "react";
 import { Line } from "react-chartjs-2";
 import { useState, useEffect } from "react";
-import { AppBar, Button } from "@material-ui/core";
+import { AppBar, Button, TextField } from "@material-ui/core";
 import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
+import CircularProgress from "@material-ui/core/CircularProgress";
 import { makeStyles } from "@material-ui/core/styles";
 import DateFnsUtils from "@date-io/date-fns";
 import { MuiPickersUtilsProvider, KeyboardDatePicker } from "@material-ui/pickers";
+import { set } from "date-fns";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -30,12 +32,22 @@ const useStyles = makeStyles((theme) => ({
     fontSize: "25px",
     background: "#FF3333",
   },
+  greyPaper: {
+    padding: theme.spacing(2),
+    textAlign: "center",
+    color: theme.palette.text.secondary,
+    fontSize: "25px",
+    background: "grey",
+  },
   greenPaper: {
     padding: theme.spacing(2),
     textAlign: "center",
     color: theme.palette.text.secondary,
     fontSize: "25px",
     background: "#00CC00",
+  },
+  margin: {
+    margin: theme.spacing(1),
   },
 }));
 
@@ -62,8 +74,13 @@ function App() {
   const [data, setData] = useState({});
   const [btcPrice, setBtcPrice] = useState(0);
   const [height, setHeight] = useState(window.innerHeight / 1.8);
-  const [selectedDateFrom, setSelectedDateFrom] = React.useState(new Date("2014-08-18T21:11:54"));
+  const [selectedDateFrom, setSelectedDateFrom] = React.useState(new Date("2021-04-18T21:11:54"));
   const [selectedDateTo, setSelectedDateTo] = React.useState(new Date());
+  const [epochs, setEpochs] = useState(3);
+  const [predictDays, setPredictDays] = useState(7);
+  const [loopback, setLoopback] = useState(5);
+  const [predictionBool, setPredictionBool] = useState(true);
+  const [buttonIsDisabled, setButtonIsDisabled] = useState(false);
 
   const fetchNewDates = (startDate, endDate) => {
     fetch(
@@ -75,6 +92,33 @@ function App() {
     )
       .then((a) => a.json())
       .then((a) => setData(a))
+      .catch((e) => {
+        console.log(e.status);
+      });
+  };
+
+  const makePredictions = () => {
+    setButtonIsDisabled(true);
+    fetch(
+      "http://localhost:5000/prediction?" +
+        new URLSearchParams({
+          epochs: epochs,
+          predictionDays: predictDays,
+          loopBack: loopback,
+        })
+    )
+      .then((a) => a.json())
+      .then((a) => {
+        let index1 = a["datasets"][0]["data"].length;
+        let index2 = a["datasets"][1]["data"].length;
+        if (parseInt(a["datasets"][0]["data"][index1 - 1], 10) >= parseInt(a["datasets"][1]["data"][index2 - 1], 10)) {
+          setPredictionBool(false);
+        } else {
+          setPredictionBool(true);
+        }
+        setButtonIsDisabled(false);
+        setData(a);
+      })
       .catch((e) => {
         console.log(e.status);
       });
@@ -105,12 +149,19 @@ function App() {
   const classes = useStyles();
 
   useEffect(() => {
-    fetch("http://localhost:5000/data", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
+    fetch(
+      "http://localhost:5000/data?" +
+        new URLSearchParams({
+          startDate: formatDate(selectedDateFrom),
+          endDate: formatDate(selectedDateTo),
+        }),
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    )
       .then((a) => a.json())
       .then((a) => setData(a))
       .catch((e) => {
@@ -166,12 +217,6 @@ function App() {
               <Grid item xs={12}>
                 <Paper className={classes.paper}>Current Value: $ {btcPrice}</Paper>
               </Grid>
-              <Grid item xs={6}>
-                <Paper className={classes.greenPaper}>Prediction: Up</Paper>
-              </Grid>
-              <Grid item xs={6}>
-                <Paper className={classes.redPaper}>Last Prediction: Wrong</Paper>
-              </Grid>
               <Grid item xs={12}>
                 <MuiPickersUtilsProvider utils={DateFnsUtils}>
                   <Grid container justify="space-around">
@@ -204,10 +249,48 @@ function App() {
                   </Grid>
                 </MuiPickersUtilsProvider>
               </Grid>
+              <Grid item xs={6}>
+                <Paper className={predictionBool == true ? classes.greenPaper : classes.redPaper}>
+                  Prediction: {predictionBool == true ? "Up" : "Down"}{" "}
+                </Paper>
+              </Grid>
+              <Grid item xs={6}>
+                <Paper className={classes.greyPaper}>Last Prediction: NA</Paper>
+              </Grid>
+              <Grid item xs={4}>
+                {}
+                <TextField
+                  type="number"
+                  onChange={(e) => setPredictDays(e.target.value)}
+                  label="Days to Predict"
+                  value={predictDays}
+                />
+              </Grid>
+              <Grid item xs={4}>
+                <TextField type="number" onChange={(e) => setEpochs(e.target.value)} label="Epochs" value={epochs} />
+              </Grid>
+              <Grid item xs={4}>
+                <TextField
+                  type="number"
+                  onChange={(e) => setLoopback(e.target.value)}
+                  label="Loopback"
+                  value={loopback}
+                />
+              </Grid>
               <Grid item xs={12} style={{ textAlign: "center" }}>
-                <Button className={classes.button} variant="contained" color="secondary">
+                <Button
+                  id="button_make_prediction"
+                  className={classes.button}
+                  variant="contained"
+                  color="secondary"
+                  onClick={() => makePredictions()}
+                  disabled={buttonIsDisabled}
+                >
                   Make Predictions
                 </Button>
+              </Grid>
+              <Grid item xs={12} style={{ textAlign: "center" }}>
+                <CircularProgress color="secondary" variant="indeterminate" size={buttonIsDisabled == false ? 0 : 40} />
               </Grid>
             </Grid>
           </div>
